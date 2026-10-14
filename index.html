@@ -11,8 +11,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- HTML5 QR Code Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <!-- QRCode Generator -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- SheetJS para Importação de Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- jsPDF & html2canvas -->
@@ -24,16 +22,22 @@
       background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
 
-    /* Container A4 Rígido para Impressão (210mm x 297mm em 96dpi) */
+    /* Container A4 Rígido para Impressão com Times New Roman (210mm x 297mm em 96dpi) */
     .a4-page {
       width: 794px !important;
       min-height: 1123px !important;
       background-color: #ffffff;
-      font-family: Arial, Helvetica, sans-serif !important;
+      font-family: 'Times New Roman', Times, serif !important;
+      font-size: 14pt !important;
       color: #000000;
       box-sizing: border-box;
       padding: 40px !important;
       margin: 0 auto;
+    }
+
+    .bordero-title {
+      font-size: 16pt !important;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -66,11 +70,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase">Base de Produtos (Excel)</label>
-            <p class="text-xs text-slate-500">Colunas: Descrição | Cód. Interno | Cód. Barras (EAN) | Valor (R$)</p>
           </div>
           <div>
-            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
-            <button type="button" onclick="document.getElementById('excelFileInput').click()"
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden">
+            <button type="button" id="btnImportExcel"
               class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2">
               <i class="fa-solid fa-file-excel text-base"></i> Importar Excel
             </button>
@@ -156,7 +159,7 @@
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <h2 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3 flex items-center gap-2">
         <i class="fa-solid fa-receipt text-emerald-600"></i>
-        Borderô de Vendas e Conferência (Pré-visualização A4)
+        Borderô de Vendas e Conferência
       </h2>
 
       <!-- Container de rolagem para dispositivos móveis mantendo a proporção A4 exata -->
@@ -164,16 +167,15 @@
         <div id="pdfExportArea" class="a4-page shadow-2xl relative">
           
           <!-- Cabeçalho Superior -->
-          <div class="flex justify-between items-start">
+          <div class="flex justify-between items-center">
             <div class="flex items-center gap-4">
-              <img src="logo.png" alt="Leroy Merlin" class="w-14 h-14 object-contain">
+              <img src="logo.png" alt="Logo" class="w-16 h-16 object-contain" onerror="this.style.display='none'">
               <div>
-                <h2 class="text-base font-bold text-slate-900 tracking-tight">LEROY MERLIN</h2>
-                <h1 class="text-lg font-extrabold text-slate-900">Borderô de vendas e conferência de Natal</h1>
+                <h1 class="bordero-title text-slate-900">Borderô de vendas e conferência de Natal</h1>
               </div>
             </div>
             <div class="text-right">
-              <p class="text-xs font-bold text-slate-800" id="borderoDateTime">00/00/0000 00:00</p>
+              <p class="font-bold text-slate-800" id="borderoDateTime">00/00/0000 00:00</p>
             </div>
           </div>
 
@@ -186,8 +188,8 @@
           <!-- Mais 1cm de Espaço (~38px) -->
           <div style="height: 38px;"></div>
 
-          <!-- Tabela de Produtos do Borderô com Colunas Redimensionadas -->
-          <table class="w-full text-left text-sm border-collapse">
+          <!-- Tabela de Produtos do Borderô -->
+          <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b-2 border-slate-400 font-bold uppercase text-slate-900">
                 <th class="py-3 px-2 w-[55%]">Descrição do produto</th>
@@ -204,9 +206,9 @@
           </table>
 
           <!-- Linha no Rodapé com Preço Total -->
-          <div class="border-t-2 border-black mt-12 pt-4 flex justify-between items-center font-bold text-base">
+          <div class="border-t-2 border-black mt-12 pt-4 flex justify-between items-center font-bold">
             <span>Preço total:</span>
-            <span id="totalPriceCell" class="text-lg">R$ 0,00</span>
+            <span id="totalPriceCell">R$ 0,00</span>
           </div>
 
         </div>
@@ -227,4 +229,427 @@
   <div id="scannerModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 id="modal
+        <h3 id="modalTitle" class="font-bold text-slate-800 text-base">Escanear Código</h3>
+        <button type="button" onclick="closeScannerModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="reader" class="w-full rounded-xl border border-slate-200 bg-black min-h-[250px]"></div>
+
+      <div class="border-t pt-3">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Selecione uma imagem com o código:</label>
+        <input type="file" id="qrFileInput" accept="image/*"
+          class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Opções (Editar / Excluir) -->
+  <div id="actionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl text-center space-y-4">
+      <h3 class="font-bold text-slate-800">O que deseja fazer?</h3>
+      <p id="actionItemDetails" class="text-xs text-slate-500 font-mono"></p>
+      <div class="flex flex-col gap-2">
+        <button type="button" onclick="confirmEditItem()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 rounded-xl transition">
+          <i class="fa-solid fa-pen mr-1"></i> Editar Item
+        </button>
+        <button type="button" onclick="confirmDeleteItem()" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition">
+          <i class="fa-solid fa-trash mr-1"></i> Excluir Item
+        </button>
+        <button type="button" onclick="closeActionModal()" class="w-full bg-slate-100 text-slate-600 font-semibold py-2 rounded-xl">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let itemsList = [];
+    let productsDatabase = [];
+    let editingIndex = null;
+    let selectedIndexForAction = null;
+    let html5QrCode = null;
+    let currentScanMode = 'barcode';
+
+    function playBeep() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {
+        console.log("Beep bloqueado:", e);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateUI();
+
+      // Configurar escutador do botão de Excel
+      document.getElementById("btnImportExcel").addEventListener("click", () => {
+        document.getElementById("excelFileInput").click();
+      });
+
+      document.getElementById("excelFileInput").addEventListener("change", handleExcelImport);
+      document.getElementById("qrFileInput").addEventListener("change", handleFileInput);
+    });
+
+    // Importar Planilha Excel
+    function handleExcelImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          productsDatabase = [];
+
+          rawRows.forEach((row, idx) => {
+            if (!row || row.length < 2) return;
+            
+            const col0 = String(row[0] || '').trim();
+            if (idx === 0 && (col0.toLowerCase().includes('descri') || col0.toLowerCase().includes('produto'))) return;
+
+            const desc = col0;
+            const codInterno = String(row[1] || '').trim();
+            const ean = String(row[2] || '').trim();
+            const val = parseFloat(String(row[3] || '0').replace('R$', '').replace(',', '.').trim()) || 0;
+
+            if (codInterno || ean) {
+              productsDatabase.push({
+                desc: desc,
+                codInterno: codInterno,
+                ean: ean,
+                valor: val
+              });
+            }
+          });
+
+          const statusEl = document.getElementById("excelStatus");
+          const statusText = document.getElementById("excelStatusText");
+          statusText.textContent = `${productsDatabase.length} produto(s) carregado(s) da planilha com sucesso!`;
+          statusEl.classList.remove("hidden");
+
+          lookupProductInfo();
+        } catch (err) {
+          alert("Erro ao ler arquivo Excel.");
+          console.error(err);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // Busca produto na planilha importada
+    function lookupProductInfo() {
+      const codeInput = document.getElementById("barcodeInput").value.trim();
+      const infoBox = document.getElementById("productInfoBox");
+
+      if (!codeInput || productsDatabase.length === 0) {
+        infoBox.classList.add("hidden");
+        return;
+      }
+
+      const match = productsDatabase.find(p => p.codInterno === codeInput || p.ean === codeInput);
+
+      if (match) {
+        document.getElementById("productDesc").textContent = match.desc || "Produto localizado";
+        document.getElementById("productCodes").textContent = `Int: ${match.codInterno || '-'} | EAN: ${match.ean || '-'}`;
+        document.getElementById("productPrice").textContent = match.valor > 0 ? `R$ ${match.valor.toFixed(2).replace('.', ',')}` : '';
+        infoBox.classList.remove("hidden");
+      } else {
+        infoBox.classList.add("hidden");
+      }
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const codeInput = document.getElementById("barcodeInput");
+      const qtyInput = document.getElementById("qtyInput");
+
+      const code = codeInput.value.trim();
+      let qty = parseFloat(qtyInput.value.replace(',', '.'));
+
+      if (!code || isNaN(qty) || qty <= 0) return;
+
+      if (editingIndex !== null) {
+        itemsList[editingIndex] = { code, qty };
+        editingIndex = null;
+      } else {
+        itemsList.push({ code, qty });
+      }
+
+      codeInput.value = "";
+      qtyInput.value = "";
+      cancelEditing();
+      updateUI();
+    }
+
+    function updateUI() {
+      const container = document.getElementById("itemsContainer");
+      const itemCountBadge = document.getElementById("itemCount");
+
+      itemCountBadge.textContent = `${itemsList.length} item(ns)`;
+
+      if (itemsList.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-sm text-center py-6">Nenhum item adicionado ainda.</p>`;
+      } else {
+        container.innerHTML = itemsList.map((item, idx) => `
+          <div onclick="openActionModal(${idx})" 
+            class="p-3.5 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200 rounded-xl flex items-center justify-between cursor-pointer transition shadow-xs group">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold text-xs">
+                ${idx + 1}º
+              </span>
+              <div>
+                <p class="font-mono text-sm font-bold text-slate-800">${item.code}</p>
+                <p class="text-xs text-slate-500">Qtd: <span class="font-bold text-emerald-700">${formatQty(item.qty)}</span></p>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-emerald-600 text-xs"></i>
+          </div>
+        `).join("");
+      }
+
+      generateBorderoTable();
+    }
+
+    function formatQty(num) {
+      if (Number.isInteger(num)) return num.toString();
+      return num.toString().replace('.', ',');
+    }
+
+    function formatPrice(num) {
+      return (num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Gera a Tabela do Borderô com Preço Total
+    function generateBorderoTable() {
+      const tableBody = document.getElementById("borderoTableBody");
+      const totalPriceCell = document.getElementById("totalPriceCell");
+      const saveBtn = document.getElementById("savePdfBtn");
+      const dateTimeEl = document.getElementById("borderoDateTime");
+
+      // Atualiza Data e Hora
+      const now = new Date();
+      dateTimeEl.textContent = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+      if (itemsList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td></tr>`;
+        totalPriceCell.textContent = "R$ 0,00";
+        saveBtn.disabled = true;
+        return;
+      }
+
+      const groupedMap = new Map();
+      itemsList.forEach(item => {
+        if (groupedMap.has(item.code)) {
+          groupedMap.set(item.code, groupedMap.get(item.code) + item.qty);
+        } else {
+          groupedMap.set(item.code, item.qty);
+        }
+      });
+
+      const tableRows = [];
+      let grandTotal = 0;
+
+      groupedMap.forEach((qty, code) => {
+        const match = productsDatabase.find(p => p.codInterno === code || p.ean === code);
+        const desc = match ? match.desc : "Item sem descrição";
+        const unitPrice = match ? match.valor : 0;
+        const itemTotal = qty * unitPrice;
+        grandTotal += itemTotal;
+
+        tableRows.push(`
+          <tr class="align-middle">
+            <td class="py-3 px-2 font-medium text-slate-900">${desc}</td>
+            <td class="py-3 px-2 text-center font-bold">${formatQty(qty)} un</td>
+            <td class="py-3 px-2 text-center font-mono">${code}</td>
+            <td class="py-3 px-2 text-right font-bold">${itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : 'R$ --'}</td>
+          </tr>
+        `);
+      });
+
+      tableBody.innerHTML = tableRows.join("");
+      totalPriceCell.textContent = `R$ ${formatPrice(grandTotal)}`;
+      saveBtn.disabled = false;
+    }
+
+    function openActionModal(index) {
+      selectedIndexForAction = index;
+      const item = itemsList[index];
+      document.getElementById("actionItemDetails").textContent = `${index + 1}º Item: ${item.code} (${formatQty(item.qty)})`;
+      document.getElementById("actionModal").classList.remove("hidden");
+    }
+
+    function closeActionModal() {
+      document.getElementById("actionModal").classList.add("hidden");
+      selectedIndexForAction = null;
+    }
+
+    function confirmEditItem() {
+      if (selectedIndexForAction === null) return;
+      editingIndex = selectedIndexForAction;
+      const item = itemsList[editingIndex];
+
+      document.getElementById("barcodeInput").value = item.code;
+      document.getElementById("qtyInput").value = item.qty;
+      document.getElementById("editBadge").classList.remove("hidden");
+      document.getElementById("cancelEditBtn").classList.remove("hidden");
+      document.getElementById("submitBtn").innerHTML = `<i class="fa-solid fa-check mr-1"></i> Salvar Alteração`;
+
+      closeActionModal();
+      lookupProductInfo();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      updateUI();
+    }
+
+    function confirmDeleteItem() {
+      if (selectedIndexForAction === null) return;
+      itemsList.splice(selectedIndexForAction, 1);
+      closeActionModal();
+      if (editingIndex === selectedIndexForAction) cancelEditing();
+      updateUI();
+    }
+
+    function cancelEditing() {
+      editingIndex = null;
+      document.getElementById("barcodeInput").value = "";
+      document.getElementById("qtyInput").value = "";
+      document.getElementById("editBadge").classList.add("hidden");
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+      document.getElementById("submitBtn").innerHTML = `<i class="fa-solid fa-plus mr-1"></i> Adicionar à Sequência`;
+      document.getElementById("productInfoBox").classList.add("hidden");
+      updateUI();
+    }
+
+    async function openScanner(mode) {
+      currentScanMode = mode;
+      document.getElementById("modalTitle").textContent = mode === 'barcode' ? "Escanear Código de Barras" : "Escanear QR Code Reverso";
+      document.getElementById("scannerModal").classList.remove("hidden");
+
+      if (html5QrCode) {
+        try { await html5QrCode.stop(); } catch(e){}
+      }
+
+      html5QrCode = new Html5Qrcode("reader");
+      
+      const config = { fps: 10, qrbox: { width: 250, height: 180 } };
+      
+      html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+        .catch(err => {
+          console.warn("Câmera traseira falhou, tentando qualquer câmera disponível...", err);
+          html5QrCode.start({ facingMode: "user" }, config, onScanSuccess)
+            .catch(e => alert("Não foi possível acessar a câmera. Verifique as permissões do seu navegador."));
+        });
+    }
+
+    function closeScannerModal() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          html5QrCode = null;
+        }).catch(() => {
+          html5QrCode = null;
+        });
+      }
+      document.getElementById("scannerModal").classList.add("hidden");
+    }
+
+    function onScanSuccess(decodedText) {
+      playBeep();
+      closeScannerModal();
+
+      if (currentScanMode === 'barcode') {
+        document.getElementById("barcodeInput").value = decodedText.trim();
+        lookupProductInfo();
+        document.getElementById("qtyInput").focus();
+      } else {
+        parseReverseQR(decodedText);
+      }
+    }
+
+    function handleFileInput(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const html5QrCodeFile = new Html5Qrcode("reader");
+      html5QrCodeFile.scanFile(file, true)
+        .then(decodedText => {
+          playBeep();
+          closeScannerModal();
+          if (currentScanMode === 'barcode') {
+            document.getElementById("barcodeInput").value = decodedText.trim();
+            lookupProductInfo();
+          } else {
+            parseReverseQR(decodedText);
+          }
+        })
+        .catch(err => {
+          alert("Não foi possível identificar o código na imagem.");
+        });
+    }
+
+    function parseReverseQR(text) {
+      if (!text) return;
+      const cleanText = text.trim();
+      const newItems = [];
+
+      const entries = cleanText.split(/[\$\n\r]+/);
+
+      entries.forEach(entry => {
+        if (!entry.trim()) return;
+
+        let parts = [];
+        if (entry.includes('#')) parts = entry.split('#');
+        else if (entry.includes('|')) parts = entry.split('|');
+        else if (entry.includes(';')) parts = entry.split(';');
+
+        if (parts.length >= 2) {
+          const code = parts[0].trim();
+          let qtyStr = parts[1].trim().replace(',', '.');
+          qtyStr = qtyStr.replace(/[^\d\.]/g, '');
+          const qty = parseFloat(qtyStr);
+
+          if (code && !isNaN(qty)) {
+            newItems.push({ code, qty });
+          }
+        }
+      });
+
+      if (newItems.length > 0) {
+        itemsList = newItems;
+        cancelEditing();
+        updateUI();
+      } else {
+        alert("QR Code não reconhecido no padrão do sistema.");
+      }
+    }
+
+    // Exportação em PDF A4 de Alta Definição
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const element = document.getElementById("pdfExportArea");
+
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+      pdf.save("Bordero_Vendas_Conferencia_Natal.pdf");
+    }
+  </script>
+</body>
+</html>
