@@ -2,8 +2,16 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Natal Leroy Merlin - Decoração</title>
+
+  <!-- PWA Meta Tags & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Natal Leroy">
+  <link rel="apple-touch-icon" href="logo.png">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -33,13 +41,13 @@
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased select-none">
 
   <!-- Header Dark -->
   <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-4 px-6 sticky top-0 z-40 mb-6">
     <div class="max-w-3xl mx-auto flex items-center justify-between">
       
-      <!-- Lado Esquerdo: Novo Ícone de Árvore de Natal + Título e Subtítulo -->
+      <!-- Lado Esquerdo: Ícone de Árvore de Natal + Título e Subtítulo -->
       <div class="flex items-center gap-3.5">
         <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
           <i class="fa-solid fa-tree text-slate-950 text-xl"></i>
@@ -276,6 +284,15 @@
   </div>
 
   <script>
+    // Registro de Service Worker para suporte a PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registrado com sucesso!'))
+          .catch(err => console.log('Falha ao registrar Service Worker:', err));
+      });
+    }
+
     // URL DA PLANILHA DO GOOGLE SHEETS PUBLICADA EM CSV
     const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9DYOXhRpyAl6b3MdavNTy2mjEvp8lIX0cOsP64ojmDKAHpH4vQEAMNWFrB727abcEFa5AqC76ody5/pub?output=csv";
 
