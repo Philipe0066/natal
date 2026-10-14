@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gerador QR Code - Leroy Merlin</title>
-  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- HTML5 QR Code Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- QRCode Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- SheetJS para Importação de Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <!-- jsPDF & html2canvas -->
@@ -22,22 +23,16 @@
       background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
 
-    /* Container A4 Rígido para Impressão com Times New Roman (210mm x 297mm em 96dpi) */
+    /* Container A4 Rígido para Impressão (210mm x 297mm em 96dpi) */
     .a4-page {
       width: 794px !important;
       min-height: 1123px !important;
       background-color: #ffffff;
-      font-family: 'Times New Roman', Times, serif !important;
-      font-size: 8pt !important;
+      font-family: Arial, Helvetica, sans-serif !important;
       color: #000000;
       box-sizing: border-box;
       padding: 40px !important;
       margin: 0 auto;
-    }
-
-    .bordero-title {
-      font-size: 10pt !important;
-      font-weight: bold;
     }
   </style>
 </head>
@@ -70,10 +65,11 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase">Base de Produtos (Excel)</label>
+            <p class="text-xs text-slate-500">Colunas: Descrição | Cód. Interno | Cód. Barras (EAN) | Valor (R$)</p>
           </div>
           <div>
-            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden">
-            <button type="button" id="btnImportExcel"
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+            <button type="button" onclick="document.getElementById('excelFileInput').click()"
               class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2">
               <i class="fa-solid fa-file-excel text-base"></i> Importar Excel
             </button>
@@ -159,23 +155,24 @@
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <h2 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3 flex items-center gap-2">
         <i class="fa-solid fa-receipt text-emerald-600"></i>
-        Borderô de Vendas e Conferência
+        Borderô de Vendas e Conferência (Pré-visualização A4)
       </h2>
 
-      <!-- Container de rolagem para dispositivos móveis mantendo a proporção A4 exata -->
+      <!-- Container A4 -->
       <div class="w-full overflow-x-auto bg-slate-200 p-4 rounded-xl flex justify-center">
         <div id="pdfExportArea" class="a4-page shadow-2xl relative">
           
-          <!-- Cabeçalho Superior -->
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-3">
-              <img src="logo.png" alt="Logo" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
+          <!-- Cabeçalho Superior (Logo sem nome LEROY MERLIN + Título e QR Code com Data) -->
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-4">
+              <img src="logo.png" alt="Logo" class="w-14 h-14 object-contain">
               <div>
-                <h1 class="bordero-title text-slate-900">Borderô de vendas e conferência de Natal</h1>
+                <h1 class="text-lg font-extrabold text-slate-900">Borderô de vendas e conferência de Natal</h1>
               </div>
             </div>
-            <div class="text-right">
-              <p class="font-bold text-slate-800" id="borderoDateTime">00/00/0000 00:00</p>
+            <div class="flex flex-col items-end gap-2">
+              <div id="borderoQrCode" class="p-1 bg-white border border-black flex items-center justify-center"></div>
+              <p class="text-xs font-bold text-slate-800" id="borderoDateTime">00/00/0000 00:00</p>
             </div>
           </div>
 
@@ -189,26 +186,26 @@
           <div style="height: 38px;"></div>
 
           <!-- Tabela de Produtos do Borderô -->
-          <table class="w-full text-left border-collapse">
+          <table class="w-full text-left text-sm border-collapse">
             <thead>
               <tr class="border-b-2 border-slate-400 font-bold uppercase text-slate-900">
-                <th class="py-2 px-1 w-[55%]">Descrição do produto</th>
-                <th class="py-2 px-1 text-center w-[12%]">Qnt</th>
-                <th class="py-2 px-1 text-center w-[18%]">Código</th>
-                <th class="py-2 px-1 text-right w-[15%]">Preço</th>
+                <th class="py-3 px-2 w-[55%]">Descrição do produto</th>
+                <th class="py-3 px-2 text-center w-[12%]">Qnt</th>
+                <th class="py-3 px-2 text-center w-[18%]">Código</th>
+                <th class="py-3 px-2 text-right w-[15%]">Preço</th>
               </tr>
             </thead>
             <tbody id="borderoTableBody" class="divide-y divide-slate-200">
               <tr>
-                <td colspan="4" class="py-8 text-center text-slate-400">Nenhum item no borderô.</td>
+                <td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td>
               </tr>
             </tbody>
           </table>
 
           <!-- Linha no Rodapé com Preço Total -->
-          <div class="border-t-2 border-black mt-8 pt-3 flex justify-between items-center font-bold">
+          <div class="border-t-2 border-black mt-12 pt-4 flex justify-between items-center font-bold text-base">
             <span>Preço total:</span>
-            <span id="totalPriceCell">R$ 0,00</span>
+            <span id="totalPriceCell" class="text-lg">R$ 0,00</span>
           </div>
 
         </div>
@@ -235,11 +232,11 @@
         </button>
       </div>
 
-      <div id="reader" class="w-full rounded-xl border border-slate-200 bg-black min-h-[250px]"></div>
+      <div id="reader" class="w-full overflow-hidden rounded-xl border border-slate-200 bg-black min-h-[250px]"></div>
 
       <div class="border-t pt-3">
         <label class="block text-xs font-semibold text-slate-500 mb-1">Selecione uma imagem com o código:</label>
-        <input type="file" id="qrFileInput" accept="image/*"
+        <input type="file" id="qrFileInput" accept="image/*" onchange="handleFileInput(event)"
           class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
       </div>
     </div>
@@ -291,17 +288,8 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       updateUI();
-
-      // Configurar escutador do botão de Excel
-      document.getElementById("btnImportExcel").addEventListener("click", () => {
-        document.getElementById("excelFileInput").click();
-      });
-
-      document.getElementById("excelFileInput").addEventListener("change", handleExcelImport);
-      document.getElementById("qrFileInput").addEventListener("change", handleFileInput);
     });
 
-    // Importar Planilha Excel
     function handleExcelImport(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -352,7 +340,6 @@
       reader.readAsArrayBuffer(file);
     }
 
-    // Busca produto na planilha importada
     function lookupProductInfo() {
       const codeInput = document.getElementById("barcodeInput").value.trim();
       const infoBox = document.getElementById("productInfoBox");
@@ -435,19 +422,21 @@
       return (num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Gera a Tabela do Borderô com Preço Total
+    // Gera a Tabela do Borderô, Preço Total e QR Code no Topo
     function generateBorderoTable() {
       const tableBody = document.getElementById("borderoTableBody");
       const totalPriceCell = document.getElementById("totalPriceCell");
       const saveBtn = document.getElementById("savePdfBtn");
       const dateTimeEl = document.getElementById("borderoDateTime");
+      const borderoQrCode = document.getElementById("borderoQrCode");
 
-      // Atualiza Data e Hora
+      borderoQrCode.innerHTML = "";
+
       const now = new Date();
       dateTimeEl.textContent = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
       if (itemsList.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Nenhum item no borderô.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td></tr>`;
         totalPriceCell.textContent = "R$ 0,00";
         saveBtn.disabled = true;
         return;
@@ -463,23 +452,40 @@
       });
 
       const tableRows = [];
+      const qrParts = [];
       let grandTotal = 0;
 
       groupedMap.forEach((qty, code) => {
+        const formattedQtyStr = formatQty(qty);
+        qrParts.push(`${code}#${formattedQtyStr}`);
+
         const match = productsDatabase.find(p => p.codInterno === code || p.ean === code);
         const desc = match ? match.desc : "Item sem descrição";
         const unitPrice = match ? match.valor : 0;
         const itemTotal = qty * unitPrice;
         grandTotal += itemTotal;
 
+        // Se houver EAN/Código de Barras, exibe ele; se não tiver, mantém o código interno
+        const displayCode = (match && match.ean && match.ean.length > 0) ? match.ean : code;
+
         tableRows.push(`
           <tr class="align-middle">
-            <td class="py-1.5 px-1 font-medium text-slate-900">${desc}</td>
-            <td class="py-1.5 px-1 text-center font-bold">${formatQty(qty)} un</td>
-            <td class="py-1.5 px-1 text-center font-mono">${code}</td>
-            <td class="py-1.5 px-1 text-right font-bold">${itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : 'R$ --'}</td>
+            <td class="py-3 px-2 font-medium text-slate-900">${desc}</td>
+            <td class="py-3 px-2 text-center font-bold">${formattedQtyStr} un</td>
+            <td class="py-3 px-2 text-center font-mono">${displayCode}</td>
+            <td class="py-3 px-2 text-right font-bold">${itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : 'R$ --'}</td>
           </tr>
         `);
+      });
+
+      const qrStructureString = qrParts.join("$");
+
+      // Renderiza QR Code no Topo do Borderô A4
+      new QRCode(borderoQrCode, {
+        text: qrStructureString,
+        width: 80,
+        height: 80,
+        correctLevel: QRCode.CorrectLevel.M
       });
 
       tableBody.innerHTML = tableRows.join("");
@@ -535,25 +541,19 @@
       updateUI();
     }
 
-    async function openScanner(mode) {
+    function openScanner(mode) {
       currentScanMode = mode;
       document.getElementById("modalTitle").textContent = mode === 'barcode' ? "Escanear Código de Barras" : "Escanear QR Code Reverso";
       document.getElementById("scannerModal").classList.remove("hidden");
 
-      if (html5QrCode) {
-        try { await html5QrCode.stop(); } catch(e){}
-      }
-
       html5QrCode = new Html5Qrcode("reader");
-      
-      const config = { fps: 10, qrbox: { width: 250, height: 180 } };
-      
-      html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-        .catch(err => {
-          console.warn("Câmera traseira falhou, tentando qualquer câmera disponível...", err);
-          html5QrCode.start({ facingMode: "user" }, config, onScanSuccess)
-            .catch(e => alert("Não foi possível acessar a câmera. Verifique as permissões do seu navegador."));
-        });
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 180 } },
+        onScanSuccess
+      ).catch(err => {
+        console.warn("Erro ao abrir câmera:", err);
+      });
     }
 
     function closeScannerModal() {
@@ -634,7 +634,7 @@
         cancelEditing();
         updateUI();
       } else {
-        alert("QR Code não reconhecido no padrão do sistema.");
+        alert("QR Code não recognized no padrão do sistema.");
       }
     }
 
