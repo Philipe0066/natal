@@ -28,7 +28,7 @@
       min-height: 1123px !important;
       background-color: #ffffff;
       font-family: 'Times New Roman', Times, serif !important;
-      font-size: 14pt !important;
+      font-size: 8pt !important;
       color: #000000;
       box-sizing: border-box;
       padding: 40px !important;
@@ -36,7 +36,7 @@
     }
 
     .bordero-title {
-      font-size: 16pt !important;
+      font-size: 10pt !important;
       font-weight: bold;
     }
   </style>
@@ -168,8 +168,8 @@
           
           <!-- Cabeçalho Superior -->
           <div class="flex justify-between items-center">
-            <div class="flex items-center gap-4">
-              <img src="logo.png" alt="Logo" class="w-16 h-16 object-contain" onerror="this.style.display='none'">
+            <div class="flex items-center gap-3">
+              <img src="logo.png" alt="Logo" class="w-12 h-12 object-contain" onerror="this.style.display='none'">
               <div>
                 <h1 class="bordero-title text-slate-900">Borderô de vendas e conferência de Natal</h1>
               </div>
@@ -192,21 +192,21 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="border-b-2 border-slate-400 font-bold uppercase text-slate-900">
-                <th class="py-3 px-2 w-[55%]">Descrição do produto</th>
-                <th class="py-3 px-2 text-center w-[12%]">Qnt</th>
-                <th class="py-3 px-2 text-center w-[18%]">Código</th>
-                <th class="py-3 px-2 text-right w-[15%]">Preço</th>
+                <th class="py-2 px-1 w-[55%]">Descrição do produto</th>
+                <th class="py-2 px-1 text-center w-[12%]">Qnt</th>
+                <th class="py-2 px-1 text-center w-[18%]">Código</th>
+                <th class="py-2 px-1 text-right w-[15%]">Preço</th>
               </tr>
             </thead>
             <tbody id="borderoTableBody" class="divide-y divide-slate-200">
               <tr>
-                <td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td>
+                <td colspan="4" class="py-8 text-center text-slate-400">Nenhum item no borderô.</td>
               </tr>
             </tbody>
           </table>
 
           <!-- Linha no Rodapé com Preço Total -->
-          <div class="border-t-2 border-black mt-12 pt-4 flex justify-between items-center font-bold">
+          <div class="border-t-2 border-black mt-8 pt-3 flex justify-between items-center font-bold">
             <span>Preço total:</span>
             <span id="totalPriceCell">R$ 0,00</span>
           </div>
@@ -447,7 +447,7 @@
       dateTimeEl.textContent = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
       if (itemsList.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">Nenhum item no borderô.</td></tr>`;
         totalPriceCell.textContent = "R$ 0,00";
         saveBtn.disabled = true;
         return;
@@ -474,10 +474,10 @@
 
         tableRows.push(`
           <tr class="align-middle">
-            <td class="py-3 px-2 font-medium text-slate-900">${desc}</td>
-            <td class="py-3 px-2 text-center font-bold">${formatQty(qty)} un</td>
-            <td class="py-3 px-2 text-center font-mono">${code}</td>
-            <td class="py-3 px-2 text-right font-bold">${itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : 'R$ --'}</td>
+            <td class="py-1.5 px-1 font-medium text-slate-900">${desc}</td>
+            <td class="py-1.5 px-1 text-center font-bold">${formatQty(qty)} un</td>
+            <td class="py-1.5 px-1 text-center font-mono">${code}</td>
+            <td class="py-1.5 px-1 text-right font-bold">${itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : 'R$ --'}</td>
           </tr>
         `);
       });
