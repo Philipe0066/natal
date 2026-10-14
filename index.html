@@ -61,20 +61,26 @@
         </span>
       </div>
 
-      <!-- Importação de Planilha Excel -->
-      <div class="mb-5 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+      <!-- Sincronização Online / Importação de Planilha Excel -->
+      <div class="mb-5 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase">Base de Produtos (Excel)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase">Base de Produtos</label>
+            <p class="text-[11px] text-slate-500">Sincronização em tempo real ou arquivo local</p>
           </div>
-          <div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="syncGoogleSheets()"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 px-3 rounded-xl shadow-xs transition flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate text-sm"></i> Atualizar Online
+            </button>
             <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
             <button type="button" onclick="document.getElementById('excelFileInput').click()"
-              class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-xs transition flex items-center justify-center gap-2">
-              <i class="fa-solid fa-file-excel text-base"></i> Importar Excel
+              class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 px-3 rounded-xl shadow-xs transition flex items-center gap-1.5">
+              <i class="fa-solid fa-file-excel text-sm"></i> Importar Excel
             </button>
           </div>
         </div>
+
         <div id="excelStatus" class="mt-2 text-xs font-medium text-emerald-700 hidden flex items-center gap-1.5">
           <i class="fa-solid fa-circle-check"></i> <span id="excelStatusText"></span>
         </div>
@@ -264,6 +270,9 @@
   </div>
 
   <script>
+    // URL DA PLANILHA DO GOOGLE SHEETS PUBLICADA EM CSV
+    const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9DYOXhRpyAl6b3MdavNTy2mjEvp8lIX0cOsP64ojmDKAHpH4vQEAMNWFrB727abcEFa5AqC76ody5/pub?output=csv";
+
     let itemsList = [];
     let productsDatabase = [];
     let editingIndex = null;
@@ -289,9 +298,83 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      loadSavedDatabase();
       updateUI();
+      syncGoogleSheets();
     });
 
+    // Carrega dados salvos no navegador (se houver)
+    function loadSavedDatabase() {
+      const savedData = localStorage.getItem("leroy_products_db");
+      if (savedData) {
+        try {
+          productsDatabase = JSON.parse(savedData);
+          showExcelStatus(`${productsDatabase.length} produto(s) carregados da memória local.`);
+        } catch (e) {
+          console.error("Erro ao carregar do cache:", e);
+        }
+      }
+    }
+
+    // Salva no navegador para acesso rápido/offline
+    function saveDatabaseLocally(data) {
+      productsDatabase = data;
+      localStorage.setItem("leroy_products_db", JSON.stringify(data));
+      showExcelStatus(`${data.length} produto(s) sincronizado(s) online com sucesso!`);
+    }
+
+    function showExcelStatus(message) {
+      const statusEl = document.getElementById("excelStatus");
+      const statusText = document.getElementById("excelStatusText");
+      statusText.textContent = message;
+      statusEl.classList.remove("hidden");
+    }
+
+    // Sincronização automática com Google Sheets pública
+    async function syncGoogleSheets() {
+      try {
+        showExcelStatus("Sincronizando com a planilha online...");
+        const response = await fetch(GOOGLE_SHEETS_CSV_URL);
+        const csvText = await response.text();
+        const workbook = XLSX.read(csvText, { type: 'string' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+        const parsedData = parseRowsToDatabase(rawRows);
+        saveDatabaseLocally(parsedData);
+        lookupProductInfo();
+      } catch (err) {
+        console.error("Erro ao sincronizar online:", err);
+        if (productsDatabase.length > 0) {
+          showExcelStatus(`${productsDatabase.length} produto(s) carregados do cache offline.`);
+        } else {
+          alert("Não foi possível conectar à planilha online e não há dados salvos localmente.");
+        }
+      }
+    }
+
+    // Processa linhas da planilha
+    function parseRowsToDatabase(rawRows) {
+      const db = [];
+      rawRows.forEach((row, idx) => {
+        if (!row || row.length < 2) return;
+        
+        const col0 = String(row[0] || '').trim();
+        if (idx === 0 && (col0.toLowerCase().includes('descri') || col0.toLowerCase().includes('produto'))) return;
+
+        const desc = col0;
+        const codInterno = String(row[1] || '').trim();
+        const ean = String(row[2] || '').trim();
+        const val = parseFloat(String(row[3] || '0').replace('R$', '').replace(',', '.').trim()) || 0;
+
+        if (codInterno || ean) {
+          db.push({ desc, codInterno, ean, valor: val });
+        }
+      });
+      return db;
+    }
+
+    // Importar Planilha Excel Manualmente (Fallback)
     function handleExcelImport(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -301,38 +384,11 @@
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-          productsDatabase = [];
-
-          rawRows.forEach((row, idx) => {
-            if (!row || row.length < 2) return;
-            
-            const col0 = String(row[0] || '').trim();
-            if (idx === 0 && (col0.toLowerCase().includes('descri') || col0.toLowerCase().includes('produto'))) return;
-
-            const desc = col0;
-            const codInterno = String(row[1] || '').trim();
-            const ean = String(row[2] || '').trim();
-            const val = parseFloat(String(row[3] || '0').replace('R$', '').replace(',', '.').trim()) || 0;
-
-            if (codInterno || ean) {
-              productsDatabase.push({
-                desc: desc,
-                codInterno: codInterno,
-                ean: ean,
-                valor: val
-              });
-            }
-          });
-
-          const statusEl = document.getElementById("excelStatus");
-          const statusText = document.getElementById("excelStatusText");
-          statusText.textContent = `${productsDatabase.length} produto(s) carregado(s) da planilha com sucesso!`;
-          statusEl.classList.remove("hidden");
-
+          const parsedData = parseRowsToDatabase(rawRows);
+          saveDatabaseLocally(parsedData);
           lookupProductInfo();
         } catch (err) {
           alert("Erro ao ler arquivo Excel.");
@@ -467,7 +523,6 @@
         const itemTotal = qty * unitPrice;
         grandTotal += itemTotal;
 
-        // Se houver EAN/Código de Barras, exibe ele no borderô; se não tiver, mantém o código digitado
         const displayCode = (match && match.ean && match.ean.length > 0) ? match.ean : code;
 
         tableRows.push(`
@@ -482,7 +537,6 @@
 
       const qrStructureString = qrParts.join("$");
 
-      // Renderiza QR Code no Canto Superior Direito do Borderô A4
       new QRCode(borderoQrCode, {
         text: qrStructureString,
         width: 85,
