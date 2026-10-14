@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gerador QR Code - Leroy Merlin</title>
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -23,12 +24,12 @@
       background: linear-gradient(135deg, #059669 0%, #047857 100%);
     }
 
-    /* Container A4 Rígido para Impressão (210mm x 297mm em 96dpi) */
+    /* Container A4 Rígido Restaurado para Times New Roman */
     .a4-page {
       width: 794px !important;
       min-height: 1123px !important;
       background-color: #ffffff;
-      font-family: Arial, Helvetica, sans-serif !important;
+      font-family: 'Times New Roman', Times, serif !important;
       color: #000000;
       box-sizing: border-box;
       padding: 40px !important;
@@ -51,7 +52,7 @@
     <!-- Card Entrada de Dados -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-sans">
           <i class="fa-solid fa-pen-to-square text-emerald-600"></i>
           Entrada de Dados
         </h2>
@@ -65,7 +66,6 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase">Base de Produtos (Excel)</label>
-            <p class="text-xs text-slate-500">Colunas: Descrição | Cód. Interno | Cód. Barras (EAN) | Valor (R$)</p>
           </div>
           <div>
             <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
@@ -137,7 +137,7 @@
     <!-- Card Sequência de Itens -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
       <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
-        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 font-sans">
           <i class="fa-solid fa-list-ol text-emerald-600"></i>
           Sequência de Itens
         </h2>
@@ -151,9 +151,9 @@
       </div>
     </section>
 
-    <!-- Modelo de Borderô A4 em Proporção Real -->
+    <!-- Modelo de Borderô A4 com Fonte Original e QR Code -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-      <h2 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3 flex items-center gap-2">
+      <h2 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3 flex items-center gap-2 font-sans">
         <i class="fa-solid fa-receipt text-emerald-600"></i>
         Borderô de Vendas e Conferência (Pré-visualização A4)
       </h2>
@@ -162,16 +162,18 @@
       <div class="w-full overflow-x-auto bg-slate-200 p-4 rounded-xl flex justify-center">
         <div id="pdfExportArea" class="a4-page shadow-2xl relative">
           
-          <!-- Cabeçalho Superior (Logo sem nome LEROY MERLIN + Título e QR Code com Data) -->
+          <!-- Cabeçalho Superior com Estilo Original + QR Code no Canto Direito -->
           <div class="flex justify-between items-start">
             <div class="flex items-center gap-4">
-              <img src="logo.png" alt="Logo" class="w-14 h-14 object-contain">
+              <img src="logo.png" onerror="this.src='https://images.icon-icons.com/3912/PNG/512/leroymerlin_logo_icon_247854.png'" 
+                   alt="Leroy Merlin" class="w-14 h-14 object-contain" crossorigin="anonymous">
               <div>
                 <h1 class="text-lg font-extrabold text-slate-900">Borderô de vendas e conferência de Natal</h1>
               </div>
             </div>
-            <div class="flex flex-col items-end gap-2">
-              <div id="borderoQrCode" class="p-1 bg-white border border-black flex items-center justify-center"></div>
+            
+            <div class="flex flex-col items-end gap-1">
+              <div id="borderoQrCode" class="p-0 bg-white"></div>
               <p class="text-xs font-bold text-slate-800" id="borderoDateTime">00/00/0000 00:00</p>
             </div>
           </div>
@@ -185,7 +187,7 @@
           <!-- Mais 1cm de Espaço (~38px) -->
           <div style="height: 38px;"></div>
 
-          <!-- Tabela de Produtos do Borderô -->
+          <!-- Tabela de Produtos do Borderô na Fonte Original (Times New Roman) -->
           <table class="w-full text-left text-sm border-collapse">
             <thead>
               <tr class="border-b-2 border-slate-400 font-bold uppercase text-slate-900">
@@ -214,7 +216,7 @@
       <!-- Botão Salvar Borderô -->
       <div class="mt-6">
         <button type="button" onclick="generatePDF()" id="savePdfBtn" disabled
-          class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-4 rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base">
+          class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-4 rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base font-sans">
           <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i> Salvar Borderô (PDF A4)
         </button>
       </div>
@@ -397,7 +399,7 @@
           <div onclick="openActionModal(${idx})" 
             class="p-3.5 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200 rounded-xl flex items-center justify-between cursor-pointer transition shadow-xs group">
             <div class="flex items-center gap-3">
-              <span class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold text-xs">
+              <span class="w-7 h-7 bg-emerald-600 text-white rounded-lg flex items-center justify-center font-bold text-xs font-sans">
                 ${idx + 1}º
               </span>
               <div>
@@ -422,7 +424,7 @@
       return (num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Gera a Tabela do Borderô, Preço Total e QR Code no Topo
+    // Gera a Tabela do Borderô com Preço Total e o QR Code no Topo
     function generateBorderoTable() {
       const tableBody = document.getElementById("borderoTableBody");
       const totalPriceCell = document.getElementById("totalPriceCell");
@@ -465,7 +467,7 @@
         const itemTotal = qty * unitPrice;
         grandTotal += itemTotal;
 
-        // Se houver EAN/Código de Barras, exibe ele; se não tiver, mantém o código interno
+        // Se houver EAN/Código de Barras, exibe ele no borderô; se não tiver, mantém o código digitado
         const displayCode = (match && match.ean && match.ean.length > 0) ? match.ean : code;
 
         tableRows.push(`
@@ -480,11 +482,11 @@
 
       const qrStructureString = qrParts.join("$");
 
-      // Renderiza QR Code no Topo do Borderô A4
+      // Renderiza QR Code no Canto Superior Direito do Borderô A4
       new QRCode(borderoQrCode, {
         text: qrStructureString,
-        width: 80,
-        height: 80,
+        width: 85,
+        height: 85,
         correctLevel: QRCode.CorrectLevel.M
       });
 
@@ -634,7 +636,7 @@
         cancelEditing();
         updateUI();
       } else {
-        alert("QR Code não recognized no padrão do sistema.");
+        alert("QR Code não reconhecido no padrão do sistema.");
       }
     }
 
