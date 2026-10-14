@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Natal Leroy">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3815/3815321.png">
+  <link rel="apple-touch-icon" href="./christmas.png">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -53,7 +53,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased select-none">
 
-  <!-- Splash Screen de Natal Corrigida para PWA -->
+  <!-- Splash Screen de Natal com christmas.png -->
   <div id="splashScreen" class="fixed inset-0 z-50 christmas-splash-bg flex flex-col items-center justify-center p-6 text-center select-none">
     
     <!-- Flocos de Neve em Segundo Plano -->
@@ -63,10 +63,10 @@
       <i class="fa-solid fa-snowflake text-5xl text-white animate-pulse mt-24"></i>
     </div>
 
-    <!-- Imagem do Papai Noel -->
+    <!-- Imagem christmas.png na Splash -->
     <div class="relative mb-6">
       <div class="w-32 h-32 bg-amber-400/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-amber-300/30 shadow-2xl p-2 animate-pulse">
-        <img src="https://cdn-icons-png.flaticon.com/512/3815/3815321.png" alt="Papai Noel" class="w-24 h-24 object-contain drop-shadow-xl" crossorigin="anonymous">
+        <img src="./christmas.png" alt="Natal Leroy Merlin" class="w-24 h-24 object-contain drop-shadow-xl" crossorigin="anonymous">
       </div>
       <div class="absolute -bottom-2 -right-2 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md border border-emerald-400">
         Ho Ho Ho!
@@ -315,7 +315,6 @@
       });
     }
 
-    // Função que esconde a Splash Screen suavemente
     function hideSplashScreen() {
       const splash = document.getElementById("splashScreen");
       if (splash) {
@@ -355,7 +354,6 @@
       updateUI();
       syncGoogleSheets();
 
-      // Garante tempo visível para a Splash no PWA
       setTimeout(hideSplashScreen, 1800);
     });
 
