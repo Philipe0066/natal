@@ -37,20 +37,12 @@
       visibility: hidden;
       transition: opacity 0.6s ease-out, visibility 0.6s ease-out;
     }
-
-    .a4-page {
-      width: 794px !important;
-      min-height: 1123px !important;
-      background-color: #ffffff;
-      font-family: 'Times New Roman', Times, serif !important;
-      color: #000000;
-      box-sizing: border-box;
-      padding: 30px 40px !important;
-      margin: 0 auto;
-    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased select-none">
+
+  <!-- Container Oculto para Renderizar QR Code em Memória para o PDF -->
+  <div id="borderoQrCode" class="hidden"></div>
 
   <!-- Splash Screen de Natal -->
   <div id="splashScreen" class="fixed inset-0 z-50 christmas-splash-bg flex flex-col items-center justify-center p-6 text-center select-none">
@@ -186,9 +178,9 @@
       </form>
     </section>
 
-    <!-- Card Sequência de Itens -->
-    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
-      <div class="flex items-center justify-between mb-3 border-b border-slate-700/50 pb-3">
+    <!-- Card Sequência de Itens & Geração do PDF -->
+    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700/50 pb-3">
         <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
           <i class="fa-solid fa-list-ol text-orange-500"></i>
           Sequência de Itens
@@ -201,65 +193,11 @@
       <div id="itemsContainer" class="space-y-2.5">
         <p class="text-slate-500 text-sm text-center py-6">Nenhum item adicionado ainda.</p>
       </div>
-    </section>
 
-    <!-- Modelo de Borderô A4 -->
-    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
-      <h2 class="text-base font-bold text-slate-200 mb-4 border-b border-slate-700/50 pb-3 flex items-center gap-2">
-        <i class="fa-solid fa-receipt text-orange-500"></i>
-        Borderô de Vendas e Conferência (Pré-visualização A4)
-      </h2>
-
-      <div class="w-full overflow-x-auto bg-slate-950/80 p-4 rounded-xl flex justify-center border border-slate-800">
-        <div id="pdfExportArea" class="a4-page shadow-2xl relative">
-          
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-3">
-              <img src="logo.png" onerror="this.src='https://images.icon-icons.com/3912/PNG/512/leroymerlin_logo_icon_247854.png'" 
-                   alt="Leroy Merlin" class="w-9 h-9 object-contain" crossorigin="anonymous">
-              <div>
-                <h1 class="text-base font-bold text-slate-900 leading-tight">Borderô de vendas e conferência de Natal</h1>
-              </div>
-            </div>
-            
-            <div class="flex flex-col items-end gap-0.5">
-              <div id="borderoQrCode" class="p-0 bg-white"></div>
-              <p class="text-[11px] text-slate-700 mt-0.5" id="borderoDateTime">00/00/0000 00:00</p>
-            </div>
-          </div>
-
-          <div style="height: 16px;"></div>
-          <div class="border-b border-black"></div>
-          <div style="height: 20px;"></div>
-
-          <table class="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr class="border-b border-slate-400 font-bold uppercase text-slate-900">
-                <th class="py-2 px-2 w-[55%]">Descrição do produto</th>
-                <th class="py-2 px-2 text-center w-[12%]">Qnt</th>
-                <th class="py-2 px-2 text-center w-[18%]">Código</th>
-                <th class="py-2 px-2 text-right w-[15%]">Preço</th>
-              </tr>
-            </thead>
-            <tbody id="borderoTableBody" class="divide-y divide-slate-200">
-              <tr>
-                <td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div class="border-t border-black mt-10 pt-3 flex justify-between items-center font-bold text-base">
-            <span>Preço total:</span>
-            <span id="totalPriceCell" class="text-lg">R$ 0,00</span>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="mt-6">
+      <div class="pt-2 border-t border-slate-700/50">
         <button type="button" onclick="generatePDF()" id="savePdfBtn" disabled
-          class="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base border border-slate-700">
-          <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i> Salvar Borderô (PDF A4 Editável)
+          class="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base border border-slate-700">
+          <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i> Gerar Borderô
         </button>
       </div>
     </section>
@@ -347,6 +285,8 @@
 
     const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9DYOXhRpyAl6b3MdavNTy2mjEvp8lIX0cOsP64ojmDKAHpH4vQEAMNWFrB727abcEFa5AqC76ody5/pub?output=csv";
     const HISTORY_STORAGE_KEY = "leroy_borderos_history";
+    const LEROY_LOGO_URL = "logo.png";
+    const LEROY_LOGO_FALLBACK = "https://images.icon-icons.com/3912/PNG/512/leroymerlin_logo_icon_247854.png";
 
     let itemsList = [];
     let productsDatabase = [];
@@ -516,8 +456,10 @@
     function updateUI() {
       const container = document.getElementById("itemsContainer");
       const itemCountBadge = document.getElementById("itemCount");
+      const saveBtn = document.getElementById("savePdfBtn");
 
       itemCountBadge.textContent = `${itemsList.length} item(ns)`;
+      saveBtn.disabled = itemsList.length === 0;
 
       if (itemsList.length === 0) {
         container.innerHTML = `<p class="text-slate-500 text-sm text-center py-6">Nenhum item adicionado ainda.</p>`;
@@ -539,7 +481,7 @@
         `).join("");
       }
 
-      generateBorderoTable();
+      generateQrCodeData();
     }
 
     function formatQty(num) {
@@ -551,72 +493,28 @@
       return (num || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function generateBorderoTable() {
-      const tableBody = document.getElementById("borderoTableBody");
-      const totalPriceCell = document.getElementById("totalPriceCell");
-      const saveBtn = document.getElementById("savePdfBtn");
-      const dateTimeEl = document.getElementById("borderoDateTime");
+    function generateQrCodeData() {
       const borderoQrCode = document.getElementById("borderoQrCode");
-
       borderoQrCode.innerHTML = "";
 
-      const now = new Date();
-      dateTimeEl.textContent = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-
-      if (itemsList.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-400">Nenhum item no borderô.</td></tr>`;
-        totalPriceCell.textContent = "R$ 0,00";
-        saveBtn.disabled = true;
-        return;
-      }
+      if (itemsList.length === 0) return;
 
       const groupedMap = new Map();
       itemsList.forEach(item => {
-        if (groupedMap.has(item.code)) {
-          groupedMap.set(item.code, groupedMap.get(item.code) + item.qty);
-        } else {
-          groupedMap.set(item.code, item.qty);
-        }
+        groupedMap.set(item.code, (groupedMap.get(item.code) || 0) + item.qty);
       });
 
-      const tableRows = [];
       const qrParts = [];
-      let grandTotal = 0;
-
       groupedMap.forEach((qty, code) => {
-        const formattedQtyStr = formatQty(qty);
-        qrParts.push(`${code}#${formattedQtyStr}`);
-
-        const match = productsDatabase.find(p => p.codInterno === code || p.ean === code);
-        const desc = match ? match.desc : "Item sem descrição";
-        const unitPrice = match ? match.valor : 0;
-        const itemTotal = qty * unitPrice;
-        grandTotal += itemTotal;
-
-        const displayCode = (match && match.ean && match.ean.length > 0) ? match.ean : code;
-
-        tableRows.push(`
-          <tr class="align-middle">
-            <td class="py-2.5 px-2 font-medium text-slate-900">${desc}</td>
-            <td class="py-2.5 px-2 text-center font-bold">${formattedQtyStr} un</td>
-            <td class="py-2.5 px-2 text-center font-mono">${displayCode}</td>
-            <td class="py-2.5 px-2 text-right font-bold">${itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : 'R$ --'}</td>
-          </tr>
-        `);
+        qrParts.push(`${code}#${formatQty(qty)}`);
       });
-
-      const qrStructureString = qrParts.join("$");
 
       new QRCode(borderoQrCode, {
-        text: qrStructureString,
+        text: qrParts.join("$"),
         width: 65,
         height: 65,
         correctLevel: QRCode.CorrectLevel.M
       });
-
-      tableBody.innerHTML = tableRows.join("");
-      totalPriceCell.textContent = `R$ ${formatPrice(grandTotal)}`;
-      saveBtn.disabled = false;
     }
 
     function openActionModal(index) {
@@ -764,25 +662,51 @@
       }
     }
 
-    /* GERAÇÃO DE PDF VETORIAL E EDITÁVEL VIA jsPDF (Com lay-out corrigido do QR Code) */
+    function loadImageAsDataURL(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
     async function generatePDF() {
+      if (itemsList.length === 0) return;
+
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
 
       const marginX = 15;
-      let currentY = 18;
+      let currentY = 16;
 
-      // 1. Cabeçalho - Título principal
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(14);
-      pdf.setTextColor(15, 23, 42);
-      pdf.text("Borderô de vendas e conferência de Natal", marginX, currentY + 5);
+      let logoDataUrl = await loadImageAsDataURL(LEROY_LOGO_URL);
+      if (!logoDataUrl) {
+        logoDataUrl = await loadImageAsDataURL(LEROY_LOGO_FALLBACK);
+      }
 
-      // Data e Hora (abaixo do QR Code no canto direito)
+      if (logoDataUrl) {
+        pdf.addImage(logoDataUrl, "PNG", marginX, currentY, 11, 11);
+      }
+
+      pdf.setFont("times", "bold");
+      pdf.setFontSize(13);
+      pdf.setTextColor(0);
+      const titleX = logoDataUrl ? marginX + 14 : marginX;
+      pdf.text("Borderô de vendas e conferência de Natal", titleX, currentY + 7.5);
+
       const now = new Date();
       const dateTimeStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
-      // 2. Desenhar o QR Code no topo superior direito
+      generateQrCodeData();
       const qrCanvas = document.querySelector("#borderoQrCode canvas");
       const qrImg = document.querySelector("#borderoQrCode img");
       let qrDataUrl = null;
@@ -797,24 +721,20 @@
         pdf.addImage(qrDataUrl, "PNG", 195 - marginX - 22, currentY, 22, 22);
       }
 
-      // Imprime data e hora logo abaixo do QR Code
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont("times", "normal");
       pdf.setFontSize(8.5);
-      pdf.setTextColor(100);
+      pdf.setTextColor(80);
       pdf.text(dateTimeStr, 195 - marginX, currentY + 27, { align: "right" });
 
-      // Avança o Y para garantir que a linha divisória fique totalmente abaixo do QR Code e Data
       currentY += 32;
 
-      // Linha divisória
       pdf.setDrawColor(0);
       pdf.setLineWidth(0.5);
       pdf.line(marginX, currentY, 195 - marginX, currentY);
 
       currentY += 8;
 
-      // 3. Cabeçalho da Tabela
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont("times", "bold");
       pdf.setFontSize(10);
       pdf.setTextColor(0);
 
@@ -829,8 +749,7 @@
 
       currentY += 7;
 
-      // 4. Linhas de Produtos
-      pdf.setFont("helvetica", "normal");
+      pdf.setFont("times", "normal");
       pdf.setFontSize(9.5);
 
       const groupedMap = new Map();
@@ -866,25 +785,21 @@
         currentY += 7;
       });
 
-      // 5. Linha Final do Total
       currentY += 3;
       pdf.setLineWidth(0.5);
       pdf.line(marginX, currentY, 195 - marginX, currentY);
       currentY += 8;
 
-      pdf.setFont("helvetica", "bold");
+      pdf.setFont("times", "bold");
       pdf.setFontSize(11);
       pdf.text("Preço total:", marginX, currentY);
       pdf.text(`R$ ${formatPrice(grandTotal)}`, 195 - marginX, currentY, { align: "right" });
 
-      // Salva a emissão no histórico
       saveToHistory(grandTotal);
 
-      // Baixa o arquivo PDF
       pdf.save(`Bordero_Vendas_${new Date().toISOString().slice(0,10)}.pdf`);
     }
 
-    /* GERENCIAMENTO DO HISTÓRICO DE BORDERÔS (localStorage) */
     function saveToHistory(totalPrice) {
       const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
 
