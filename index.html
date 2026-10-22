@@ -24,9 +24,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <!-- SheetJS para Importação de Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- jsPDF & html2canvas -->
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
     .christmas-splash-bg {
@@ -260,8 +259,25 @@
       <div class="mt-6">
         <button type="button" onclick="generatePDF()" id="savePdfBtn" disabled
           class="w-full bg-slate-900 hover:bg-slate-950 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base border border-slate-700">
-          <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i> Salvar Borderô (PDF A4)
+          <i class="fa-solid fa-file-pdf text-red-400 text-xl"></i> Salvar Borderô (PDF A4 Editável)
         </button>
+      </div>
+    </section>
+
+    <!-- Card Histórico de Borderôs Gerados -->
+    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-3">
+        <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-orange-500"></i>
+          Histórico de Borderôs Gerados
+        </h2>
+        <button type="button" onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 font-semibold transition">
+          <i class="fa-solid fa-trash-can mr-1"></i> Limpar Histórico
+        </button>
+      </div>
+
+      <div id="historyContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+        <p class="text-slate-500 text-sm text-center py-4">Nenhum borderô no histórico ainda.</p>
       </div>
     </section>
 
@@ -315,12 +331,10 @@
       });
     }
 
-    // Função que esconde a Splash Screen e restaura a cor do app (#0f172a)
     function hideSplashScreen() {
       const splash = document.getElementById("splashScreen");
       const themeColorTag = document.getElementById("themeColorTag");
 
-      // Altera a cor das barras do Android/iOS para a cor do app (#0f172a)
       if (themeColorTag) {
         themeColorTag.setAttribute("content", "#0f172a");
       }
@@ -332,6 +346,7 @@
     }
 
     const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9DYOXhRpyAl6b3MdavNTy2mjEvp8lIX0cOsP64ojmDKAHpH4vQEAMNWFrB727abcEFa5AqC76ody5/pub?output=csv";
+    const HISTORY_STORAGE_KEY = "leroy_borderos_history";
 
     let itemsList = [];
     let productsDatabase = [];
@@ -361,6 +376,7 @@
       loadSavedDatabase();
       updateUI();
       syncGoogleSheets();
+      renderHistory();
 
       setTimeout(hideSplashScreen, 1800);
     });
@@ -748,16 +764,197 @@
       }
     }
 
+    /* GERAÇÃO DE PDF VETORIAL E EDITÁVEL VIA jsPDF (Com lay-out corrigido do QR Code) */
     async function generatePDF() {
       const { jsPDF } = window.jspdf;
-      const element = document.getElementById("pdfExportArea");
-
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
-
       const pdf = new jsPDF("p", "mm", "a4");
-      pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
-      pdf.save("Bordero_Vendas_Conferencia_Natal.pdf");
+
+      const marginX = 15;
+      let currentY = 18;
+
+      // 1. Cabeçalho - Título principal
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text("Borderô de vendas e conferência de Natal", marginX, currentY + 5);
+
+      // Data e Hora (abaixo do QR Code no canto direito)
+      const now = new Date();
+      const dateTimeStr = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+
+      // 2. Desenhar o QR Code no topo superior direito
+      const qrCanvas = document.querySelector("#borderoQrCode canvas");
+      const qrImg = document.querySelector("#borderoQrCode img");
+      let qrDataUrl = null;
+
+      if (qrCanvas) {
+        qrDataUrl = qrCanvas.toDataURL("image/png");
+      } else if (qrImg) {
+        qrDataUrl = qrImg.src;
+      }
+
+      if (qrDataUrl) {
+        pdf.addImage(qrDataUrl, "PNG", 195 - marginX - 22, currentY, 22, 22);
+      }
+
+      // Imprime data e hora logo abaixo do QR Code
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+      pdf.setTextColor(100);
+      pdf.text(dateTimeStr, 195 - marginX, currentY + 27, { align: "right" });
+
+      // Avança o Y para garantir que a linha divisória fique totalmente abaixo do QR Code e Data
+      currentY += 32;
+
+      // Linha divisória
+      pdf.setDrawColor(0);
+      pdf.setLineWidth(0.5);
+      pdf.line(marginX, currentY, 195 - marginX, currentY);
+
+      currentY += 8;
+
+      // 3. Cabeçalho da Tabela
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(0);
+
+      pdf.text("Descrição do produto", marginX, currentY);
+      pdf.text("Qnt", 115, currentY, { align: "center" });
+      pdf.text("Código", 145, currentY, { align: "center" });
+      pdf.text("Preço", 195 - marginX, currentY, { align: "right" });
+
+      currentY += 3;
+      pdf.setLineWidth(0.2);
+      pdf.line(marginX, currentY, 195 - marginX, currentY);
+
+      currentY += 7;
+
+      // 4. Linhas de Produtos
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9.5);
+
+      const groupedMap = new Map();
+      itemsList.forEach(item => {
+        groupedMap.set(item.code, (groupedMap.get(item.code) || 0) + item.qty);
+      });
+
+      let grandTotal = 0;
+
+      groupedMap.forEach((qty, code) => {
+        if (currentY > 270) {
+          pdf.addPage();
+          currentY = 20;
+        }
+
+        const match = productsDatabase.find(p => p.codInterno === code || p.ean === code);
+        const desc = match ? match.desc : "Item sem descrição";
+        const unitPrice = match ? match.valor : 0;
+        const itemTotal = qty * unitPrice;
+        grandTotal += itemTotal;
+
+        const displayCode = (match && match.ean && match.ean.length > 0) ? match.ean : code;
+        const formattedQty = formatQty(qty) + " un";
+        const formattedPrice = itemTotal > 0 ? `R$ ${formatPrice(itemTotal)}` : "R$ --";
+
+        const truncatedDesc = pdf.splitTextToSize(desc, 85);
+
+        pdf.text(truncatedDesc[0], marginX, currentY);
+        pdf.text(formattedQty, 115, currentY, { align: "center" });
+        pdf.text(displayCode, 145, currentY, { align: "center" });
+        pdf.text(formattedPrice, 195 - marginX, currentY, { align: "right" });
+
+        currentY += 7;
+      });
+
+      // 5. Linha Final do Total
+      currentY += 3;
+      pdf.setLineWidth(0.5);
+      pdf.line(marginX, currentY, 195 - marginX, currentY);
+      currentY += 8;
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text("Preço total:", marginX, currentY);
+      pdf.text(`R$ ${formatPrice(grandTotal)}`, 195 - marginX, currentY, { align: "right" });
+
+      // Salva a emissão no histórico
+      saveToHistory(grandTotal);
+
+      // Baixa o arquivo PDF
+      pdf.save(`Bordero_Vendas_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+
+    /* GERENCIAMENTO DO HISTÓRICO DE BORDERÔS (localStorage) */
+    function saveToHistory(totalPrice) {
+      const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+
+      const newRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('pt-BR'),
+        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        totalItems: itemsList.length,
+        totalPrice: totalPrice,
+        items: JSON.parse(JSON.stringify(itemsList))
+      };
+
+      historyData.unshift(newRecord);
+
+      if (historyData.length > 50) historyData.pop();
+
+      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyData));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById("historyContainer");
+      if (!container) return;
+
+      const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+
+      if (historyData.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm text-center py-4">Nenhum borderô gerado ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = historyData.map(record => `
+        <div class="bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl flex items-center justify-between text-xs">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white">${record.date} às ${record.time}</span>
+              <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono font-semibold">
+                ${record.totalItems} item(ns)
+              </span>
+            </div>
+            <p class="text-slate-400 mt-1">Total: <span class="font-bold text-emerald-400">R$ ${formatPrice(record.totalPrice)}</span></p>
+          </div>
+
+          <button type="button" onclick="loadHistoryRecord(${record.id})" title="Carregar este borderô"
+            class="bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-600 px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Carregar
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function loadHistoryRecord(id) {
+      const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+      const record = historyData.find(r => r.id === id);
+
+      if (record) {
+        if (confirm(`Deseja carregar o borderô do dia ${record.date} às ${record.time}? Os itens atuais serão substituídos.`)) {
+          itemsList = JSON.parse(JSON.stringify(record.items));
+          cancelEditing();
+          updateUI();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    }
+
+    function clearHistory() {
+      if (confirm("Tem certeza que deseja apagar todo o histórico de borderôs?")) {
+        localStorage.removeItem(HISTORY_STORAGE_KEY);
+        renderHistory();
+      }
     }
   </script>
 </body>
