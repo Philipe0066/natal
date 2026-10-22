@@ -39,22 +39,19 @@
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased select-none">
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12 font-sans antialiased select-none overflow-x-hidden">
 
   <!-- Container Oculto para Renderizar QR Code em Memória para o PDF -->
   <div id="borderoQrCode" class="hidden"></div>
 
   <!-- Splash Screen de Natal -->
   <div id="splashScreen" class="fixed inset-0 z-50 christmas-splash-bg flex flex-col items-center justify-center p-6 text-center select-none">
-    
-    <!-- Flocos de Neve em Segundo Plano -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20 flex justify-between p-8">
       <i class="fa-solid fa-snowflake text-4xl text-white animate-pulse"></i>
       <i class="fa-solid fa-snowflake text-2xl text-white animate-bounce mt-12"></i>
       <i class="fa-solid fa-snowflake text-5xl text-white animate-pulse mt-24"></i>
     </div>
 
-    <!-- Imagem christmas.png na Splash -->
     <div class="relative mb-6">
       <div class="w-32 h-32 bg-amber-400/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-amber-300/30 shadow-2xl p-2 animate-pulse">
         <img src="./christmas.png" alt="Natal Leroy Merlin" class="w-24 h-24 object-contain drop-shadow-xl" crossorigin="anonymous">
@@ -78,17 +75,87 @@
     <div class="max-w-3xl mx-auto flex items-center justify-between">
       
       <div class="flex items-center gap-3.5">
-        <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+        <!-- Botão Árvore de Natal para abrir o Menu Lateral -->
+        <button type="button" onclick="toggleSidebar(true)" title="Abrir Menu Lateral"
+          class="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20 transition active:scale-95 cursor-pointer">
           <i class="fa-solid fa-tree text-slate-950 text-xl"></i>
-        </div>
+        </button>
         <div>
           <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none">Natal Leroy Merlin</h1>
-          <p class="text-slate-400 text-xs sm:text-sm font-medium mt-1">Decoração</p>
+          <p class="text-slate-400 text-xs sm:text-sm font-medium mt-1">Decoração & Conferência</p>
         </div>
       </div>
 
+      <button type="button" onclick="toggleSidebar(true)" class="text-slate-400 hover:text-white text-xl p-2">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
     </div>
   </header>
+
+  <!-- Overlay para o Menu Lateral -->
+  <div id="sidebarOverlay" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs hidden z-50 transition-opacity"></div>
+
+  <!-- Drawer / Menu Lateral -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-slate-900 border-r border-slate-800 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out p-5 flex flex-col justify-between overflow-y-auto">
+    <div class="space-y-6">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-bars text-orange-500 text-lg"></i>
+          <h2 class="font-bold text-white text-base">Menu Principal</h2>
+        </div>
+        <button type="button" onclick="toggleSidebar(false)" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Sessão Base de Produtos -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3">
+        <div class="border-b border-slate-700/50 pb-2">
+          <label class="block text-xs font-bold text-slate-200 uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-database text-orange-400"></i> Base de Produtos
+          </label>
+          <p class="text-[11px] text-slate-400 mt-0.5">Sincronização e arquivos</p>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button type="button" onclick="syncGoogleSheets()"
+            class="w-full bg-blue-600/80 hover:bg-blue-600 text-white font-semibold text-xs py-2.5 px-3 rounded-xl shadow-xs transition flex items-center justify-center gap-2 border border-blue-500/30">
+            <i class="fa-solid fa-rotate text-xs"></i> Atualizar Online
+          </button>
+
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
+          <button type="button" onclick="document.getElementById('excelFileInput').click()"
+            class="w-full bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs py-2.5 px-3 rounded-xl shadow-xs transition flex items-center justify-center gap-2 border border-emerald-500/30">
+            <i class="fa-solid fa-file-excel text-xs"></i> Importar Excel
+          </button>
+        </div>
+
+        <div id="excelStatus" class="mt-2 text-xs font-medium text-emerald-400 hidden flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-check"></i> <span id="excelStatusText"></span>
+        </div>
+      </div>
+
+      <!-- Sessão Histórico no Menu Lateral -->
+      <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-3">
+        <div class="border-b border-slate-700/50 pb-2">
+          <label class="block text-xs font-bold text-slate-200 uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left text-orange-400"></i> Histórico Natal
+          </label>
+          <p class="text-[11px] text-slate-400 mt-0.5">Borderôs salvos no Firebase</p>
+        </div>
+
+        <button type="button" onclick="openHistoryModal()"
+          class="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold text-xs py-3 px-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-orange-500/10">
+          <i class="fa-solid fa-folder-open text-sm"></i> Ver Histórico Completo
+        </button>
+      </div>
+    </div>
+
+    <div class="text-center text-[11px] text-slate-500 border-t border-slate-800 pt-4">
+      Natal Leroy Merlin &bull; Decoração
+    </div>
+  </aside>
 
   <main class="max-w-3xl mx-auto px-4 space-y-6">
 
@@ -102,30 +169,6 @@
         <span id="editBadge" class="hidden bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs px-2.5 py-1 rounded-full font-semibold">
           Modo Edição
         </span>
-      </div>
-
-      <div class="mb-5 bg-slate-900/60 border border-slate-700/50 rounded-xl p-3.5 space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase">Base de Produtos</label>
-            <p class="text-[11px] text-slate-400">Sincronização em tempo real ou arquivo local</p>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <button type="button" onclick="syncGoogleSheets()"
-              class="bg-blue-600/80 hover:bg-blue-600 text-white font-semibold text-xs py-2 px-3 rounded-xl shadow-xs transition flex items-center gap-1.5 border border-blue-500/30">
-              <i class="fa-solid fa-rotate text-xs"></i> Atualizar Online
-            </button>
-            <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleExcelImport(event)">
-            <button type="button" onclick="document.getElementById('excelFileInput').click()"
-              class="bg-emerald-600/80 hover:bg-emerald-600 text-white font-semibold text-xs py-2 px-3 rounded-xl shadow-xs transition flex items-center gap-1.5 border border-emerald-500/30">
-              <i class="fa-solid fa-file-excel text-xs"></i> Importar Excel
-            </button>
-          </div>
-        </div>
-
-        <div id="excelStatus" class="mt-2 text-xs font-medium text-emerald-400 hidden flex items-center gap-1.5">
-          <i class="fa-solid fa-circle-check"></i> <span id="excelStatusText"></span>
-        </div>
       </div>
 
       <form id="itemForm" class="space-y-4" onsubmit="handleFormSubmit(event)">
@@ -202,24 +245,33 @@
       </div>
     </section>
 
-    <!-- Card Histórico de Borderôs Gerados -->
-    <section class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
-      <div class="flex items-center justify-between mb-4 border-b border-slate-700/50 pb-3">
-        <h2 class="text-base font-bold text-slate-200 flex items-center gap-2">
+  </main>
+
+  <!-- Modal Histórico Completo (Firebase) -->
+  <div id="historyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
           <i class="fa-solid fa-clock-rotate-left text-orange-500"></i>
-          Histórico de Borderôs Gerados
-        </h2>
-        <button type="button" onclick="clearHistory()" class="text-xs text-red-400 hover:text-red-300 font-semibold transition">
-          <i class="fa-solid fa-trash-can mr-1"></i> Limpar Histórico
+          <h3 class="font-bold text-white text-base">Histórico Natal (Firebase)</h3>
+        </div>
+        <button type="button" onclick="closeHistoryModal()" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div id="historyContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-        <p class="text-slate-500 text-sm text-center py-4">Nenhum borderô no histórico ainda.</p>
+      <div id="historyModalList" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <p class="text-slate-500 text-sm text-center py-6">Carregando histórico do servidor...</p>
       </div>
-    </section>
 
-  </main>
+      <div class="border-t border-slate-800 pt-3 flex justify-between items-center">
+        <p class="text-[11px] text-slate-500">Sincronizado em tempo real</p>
+        <button type="button" onclick="closeHistoryModal()" class="bg-slate-800 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Scanner -->
   <div id="scannerModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
@@ -241,7 +293,7 @@
     </div>
   </div>
 
-  <!-- Modal Opções -->
+  <!-- Modal Opções de Item -->
   <div id="actionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl text-center space-y-4">
       <h3 class="font-bold text-white">O que deseja fazer?</h3>
@@ -260,16 +312,31 @@
     </div>
   </div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Service Worker registrado!'))
-          .catch(err => console.log('Falha no Service Worker:', err));
-      });
-    }
+  <!-- FIREBASE SDKs ESM -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    function hideSplashScreen() {
+    const firebaseConfig = {
+      apiKey: "AIzaSyC0UGiSxuAgjjQaSh8TmST8-A5aMmQqdaY",
+      authDomain: "leroy-app.firebaseapp.com",
+      databaseURL: "https://leroy-app-default-rtdb.firebaseio.com",
+      projectId: "leroy-app",
+      storageBucket: "leroy-app.firebasestorage.app",
+      messagingSenderId: "535866300891",
+      appId: "1:535866300891:web:b8444f7a2acedca8b62ffe"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Nó Exclusivo no Realtime Database
+    const NATAL_HISTORY_REF = ref(db, 'historico_natal');
+
+    let cachedFirebaseRecords = [];
+
+    // Ocultar Splash Screen
+    window.hideSplashScreen = function() {
       const splash = document.getElementById("splashScreen");
       const themeColorTag = document.getElementById("themeColorTag");
 
@@ -281,19 +348,131 @@
         splash.classList.add("splash-fade-out");
         setTimeout(() => splash.style.display = "none", 600);
       }
+    };
+
+    // Salvar novo registro no nó 'historico_natal'
+    window.saveToFirebase = function(record) {
+      try {
+        push(NATAL_HISTORY_REF, record);
+      } catch (err) {
+        console.error("Erro ao salvar no Firebase Realtime:", err);
+      }
+    };
+
+    // Escuta em tempo real as mudanças no nó 'historico_natal'
+    onValue(NATAL_HISTORY_REF, (snapshot) => {
+      const data = snapshot.val();
+      cachedFirebaseRecords = [];
+
+      if (data) {
+        Object.keys(data).forEach(key => {
+          cachedFirebaseRecords.unshift({
+            firebaseKey: key,
+            ...data[key]
+          });
+        });
+      }
+
+      renderHistoryModalList();
+    });
+
+    window.renderHistoryModalList = function() {
+      const container = document.getElementById("historyModalList");
+      if (!container) return;
+
+      if (cachedFirebaseRecords.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 text-sm text-center py-6">Nenhum borderô salvo no histórico.</p>`;
+        return;
+      }
+
+      container.innerHTML = cachedFirebaseRecords.map(record => `
+        <div class="bg-slate-950/80 border border-slate-800 p-3.5 rounded-xl space-y-2 text-xs">
+          <div class="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+            <div class="flex items-center gap-2 flex-1">
+              <i class="fa-solid fa-file-lines text-orange-400 text-sm"></i>
+              <span id="title-display-${record.firebaseKey}" class="font-bold text-white text-sm truncate max-w-[180px]">${record.title || 'Borderô sem nome'}</span>
+              <button type="button" onclick="editRecordTitle('${record.firebaseKey}')" title="Editar Nome" class="text-slate-400 hover:text-amber-400 text-xs p-1">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+            <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono text-[11px] font-semibold">
+              ${record.totalItems} item(ns)
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <div>
+              <p class="text-slate-400 text-[11px]">${record.date} às ${record.time}</p>
+              <p class="text-slate-300 font-medium">Total: <span class="font-bold text-emerald-400">R$ ${formatPrice(record.totalPrice)}</span></p>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="deleteRecord('${record.firebaseKey}')" title="Excluir Borderô" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 p-2 rounded-lg transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+              <button type="button" onclick="loadHistoryRecord('${record.firebaseKey}')" title="Carregar este borderô"
+                class="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30 px-3 py-1.5 rounded-lg transition font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-rotate-left"></i> Carregar
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    };
+
+    window.editRecordTitle = function(key) {
+      const record = cachedFirebaseRecords.find(r => r.firebaseKey === key);
+      if (record) {
+        const newTitle = prompt("Digite o novo nome para este borderô:", record.title || "");
+        if (newTitle !== null && newTitle.trim() !== "") {
+          const itemRef = ref(db, `historico_natal/${key}`);
+          update(itemRef, { title: newTitle.trim() });
+        }
+      }
+    };
+
+    window.deleteRecord = function(key) {
+      if (confirm("Tem certeza que deseja apagar este borderô do histórico do Firebase?")) {
+        const itemRef = ref(db, `historico_natal/${key}`);
+        remove(itemRef);
+      }
+    };
+
+    window.loadHistoryRecord = function(key) {
+      const record = cachedFirebaseRecords.find(r => r.firebaseKey === key);
+
+      if (record) {
+        if (confirm(`Deseja carregar o borderô "${record.title}"? Os itens da tela atual serão substituídos.`)) {
+          window.itemsList = JSON.parse(JSON.stringify(record.items));
+          window.cancelEditing();
+          window.updateUI();
+          window.closeHistoryModal();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    };
+  </script>
+
+  <!-- LÓGICA DA APLICAÇÃO -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registrado!'))
+          .catch(err => console.log('Falha no Service Worker:', err));
+      });
     }
 
     const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS9DYOXhRpyAl6b3MdavNTy2mjEvp8lIX0cOsP64ojmDKAHpH4vQEAMNWFrB727abcEFa5AqC76ody5/pub?output=csv";
-    const HISTORY_STORAGE_KEY = "leroy_borderos_history";
     const LEROY_LOGO_URL = "logo.png";
     const LEROY_LOGO_FALLBACK = "https://images.icon-icons.com/3912/PNG/512/leroymerlin_logo_icon_247854.png";
 
-    let itemsList = [];
-    let productsDatabase = [];
-    let editingIndex = null;
-    let selectedIndexForAction = null;
-    let html5QrCode = null;
-    let currentScanMode = 'barcode';
+    var itemsList = [];
+    var productsDatabase = [];
+    var editingIndex = null;
+    var selectedIndexForAction = null;
+    var html5QrCode = null;
+    var currentScanMode = 'barcode';
 
     function playBeep() {
       try {
@@ -316,10 +495,24 @@
       loadSavedDatabase();
       updateUI();
       syncGoogleSheets();
-      renderHistory();
 
-      setTimeout(hideSplashScreen, 1800);
+      setTimeout(() => {
+        if (window.hideSplashScreen) window.hideSplashScreen();
+      }, 1800);
     });
+
+    function toggleSidebar(open) {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+
+      if (open) {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+      } else {
+        sidebar.classList.add("-translate-x-full");
+        overlay.classList.add("hidden");
+      }
+    }
 
     function loadSavedDatabase() {
       const savedData = localStorage.getItem("leroy_products_db");
@@ -795,81 +988,30 @@
       pdf.text("Preço total:", marginX, currentY);
       pdf.text(`R$ ${formatPrice(grandTotal)}`, 195 - marginX, currentY, { align: "right" });
 
-      saveToHistory(grandTotal);
-
-      pdf.save(`Bordero_Vendas_${new Date().toISOString().slice(0,10)}.pdf`);
-    }
-
-    function saveToHistory(totalPrice) {
-      const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
-
-      const newRecord = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString('pt-BR'),
-        time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        totalItems: itemsList.length,
-        totalPrice: totalPrice,
-        items: JSON.parse(JSON.stringify(itemsList))
-      };
-
-      historyData.unshift(newRecord);
-
-      if (historyData.length > 50) historyData.pop();
-
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyData));
-      renderHistory();
-    }
-
-    function renderHistory() {
-      const container = document.getElementById("historyContainer");
-      if (!container) return;
-
-      const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
-
-      if (historyData.length === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-sm text-center py-4">Nenhum borderô gerado ainda.</p>`;
-        return;
+      // Salva no Firebase Realtime Database sob o tópico 'historico_natal'
+      const defaultTitle = `Borderô - ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      if (window.saveToFirebase) {
+        window.saveToFirebase({
+          title: defaultTitle,
+          date: now.toLocaleDateString('pt-BR'),
+          time: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          totalItems: itemsList.length,
+          totalPrice: grandTotal,
+          items: JSON.parse(JSON.stringify(itemsList))
+        });
       }
 
-      container.innerHTML = historyData.map(record => `
-        <div class="bg-slate-900/80 border border-slate-700/50 p-3 rounded-xl flex items-center justify-between text-xs">
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-white">${record.date} às ${record.time}</span>
-              <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono font-semibold">
-                ${record.totalItems} item(ns)
-              </span>
-            </div>
-            <p class="text-slate-400 mt-1">Total: <span class="font-bold text-emerald-400">R$ ${formatPrice(record.totalPrice)}</span></p>
-          </div>
-
-          <button type="button" onclick="loadHistoryRecord(${record.id})" title="Carregar este borderô"
-            class="bg-slate-800 hover:bg-slate-700 text-orange-400 border border-slate-600 px-3 py-1.5 rounded-lg transition font-semibold flex items-center gap-1">
-            <i class="fa-solid fa-arrow-rotate-left"></i> Carregar
-          </button>
-        </div>
-      `).join("");
+      pdf.save(`${defaultTitle.replace(/[\/:\s]/g, '_')}.pdf`);
     }
 
-    function loadHistoryRecord(id) {
-      const historyData = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
-      const record = historyData.find(r => r.id === id);
-
-      if (record) {
-        if (confirm(`Deseja carregar o borderô do dia ${record.date} às ${record.time}? Os itens atuais serão substituídos.`)) {
-          itemsList = JSON.parse(JSON.stringify(record.items));
-          cancelEditing();
-          updateUI();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }
+    function openHistoryModal() {
+      toggleSidebar(false);
+      if (window.renderHistoryModalList) window.renderHistoryModalList();
+      document.getElementById("historyModal").classList.remove("hidden");
     }
 
-    function clearHistory() {
-      if (confirm("Tem certeza que deseja apagar todo o histórico de borderôs?")) {
-        localStorage.removeItem(HISTORY_STORAGE_KEY);
-        renderHistory();
-      }
+    function closeHistoryModal() {
+      document.getElementById("historyModal").classList.add("hidden");
     }
   </script>
 </body>
