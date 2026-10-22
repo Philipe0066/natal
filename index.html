@@ -86,10 +86,6 @@
         </div>
       </div>
 
-      <button type="button" onclick="toggleSidebar(true)" class="text-slate-400 hover:text-white text-xl p-2">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-
     </div>
   </header>
 
@@ -335,7 +331,6 @@
 
     let cachedFirebaseRecords = [];
 
-    // Ocultar Splash Screen
     window.hideSplashScreen = function() {
       const splash = document.getElementById("splashScreen");
       const themeColorTag = document.getElementById("themeColorTag");
@@ -350,7 +345,6 @@
       }
     };
 
-    // Salvar novo registro no nó 'historico_natal'
     window.saveToFirebase = function(record) {
       try {
         push(NATAL_HISTORY_REF, record);
@@ -359,7 +353,6 @@
       }
     };
 
-    // Escuta em tempo real as mudanças no nó 'historico_natal'
     onValue(NATAL_HISTORY_REF, (snapshot) => {
       const data = snapshot.val();
       cachedFirebaseRecords = [];
